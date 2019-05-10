@@ -9,16 +9,16 @@ class FileServeView(View):
     filename = None
     is_download = True
 
-    def error401(self, request):
+    def error401(self, request, *args, **kwargs):
         return HttpResponse('Unauthorized', status=401)
 
-    def error403(self, request):
+    def error403(self, request, *args, **kwargs):
         return HttpResponseForbidden()
 
-    def get(self, request):
-        return self.send_file(request)
+    def get(self, request, *args, **kwargs):
+        return self.send_file(request, *args, **kwargs)
 
-    def get_content_type(self, request):
+    def get_content_type(self, request, *args, **kwargs):
         if self.content_type is None:
             try:
                 suffix = self.filename.lower().split('.')[-1:][0]
@@ -92,14 +92,14 @@ class FileServeView(View):
                     'xml': 'application/xml',
                     'xul': 'application/vnd.mozilla.xul+xml',
                     'zip': 'application/zip',
-                    '3gp': 'video/3gpp',
+                    '3gp': 'video/3gpp, *args, **kwargs',
                     '3g2': 'video/3gpp2',
                     '7z': 'application/x-7z-compressed'
                 }[suffix]
             except:
                 self.content_type = 'application/octet-stream'
 
-    def get_is_download(self, request):
+    def get_is_download(self, request, *args, **kwargs):
         #
         # Add your own logic here whether the files should be
         # sent to the visitor as a download or displayed in
@@ -110,14 +110,14 @@ class FileServeView(View):
         #
         pass
 
-    def get_filename(self, request):
+    def get_filename(self, request, *args, **kwargs):
         #
         # Add your own logic here to set the filename, e.g.
         #     self.filename = '....'
         #
         pass
 
-    def has_permission(self, request):
+    def has_permission(self, request, *args, **kwargs):
         #
         # Add your own logic here to set the permissions on this file, e.g.
         #
@@ -126,19 +126,19 @@ class FileServeView(View):
         #
         return True
 
-    def send_file(self, request):
+    def send_file(self, request, *args, **kwargs):
         # 401 for non-authenticated users who should be authenticated
         if self.authenticated_user_only and not request.user.is_authenticated:
-            return self.error401()
+            return self.error401(request, *args, **kwargs)
 
         # 403 for authenticated users who do not have permission
-        if not self.has_permission(request):
-            return self.error403()
+        if not self.has_permission(request, *args, **kwargs):
+            return self.error403(request, *args, **kwargs)
 
         # init response
-        self.get_filename(request)
-        self.get_content_type(request)
-        self.get_is_download(request)
+        self.get_filename(request, *args, **kwargs)
+        self.get_content_type(request, *args, **kwargs)
+        self.get_is_download(request, *args, **kwargs)
 
         # load file
         fp = open(self.filename, 'rb')
