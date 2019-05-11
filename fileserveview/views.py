@@ -1,4 +1,4 @@
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpResponse, HttpResponseForbidden
 from django.views.generic import View
 
 
@@ -6,7 +6,8 @@ class FileServeView(View):
     authenticated_user_only = True
     content_type = None
     download_filename = None
-    filename = None
+    file = None
+    has_permission = True
     is_download = True
 
     def error401(self, request, *args, **kwargs):
@@ -15,13 +16,31 @@ class FileServeView(View):
     def error403(self, request, *args, **kwargs):
         return HttpResponseForbidden()
 
+    def error404(self, request, *args, **kwargs):
+        raise Http404()
+
     def get(self, request, *args, **kwargs):
-        return self.send_file(request, *args, **kwargs)
+        # 401 for non-authenticated users who should be authenticated
+        if self.authenticated_user_only and not request.user.is_authenticated:
+            return self.error401(request, *args, **kwargs)
+
+        # get file
+        self.get_file(request, *args, **kwargs)
+
+        # 404 for no file
+        if self.file is None:
+            return self.error404(request, *args, **kwargs)
+
+        # 403 for authenticated users who do not have permission
+        if not self.has_permission:
+            return self.error403(request, *args, **kwargs)
+
+        return self.serve(request, *args, **kwargs)
 
     def get_content_type(self, request, *args, **kwargs):
         if self.content_type is None:
             try:
-                suffix = self.filename.lower().split('.')[-1:][0]
+                suffix = self.file.lower().split('.')[-1:][0]
                 # thank you:
                 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types
                 self.content_type = {
@@ -99,49 +118,24 @@ class FileServeView(View):
             except:
                 self.content_type = 'application/octet-stream'
 
-    def get_is_download(self, request, *args, **kwargs):
+    def get_file(self, request, *args, **kwargs):
         #
-        # Add your own logic here whether the files should be
-        # sent to the visitor as a download or displayed in
-        # their browser, e.g.
+        # Add your own logic here to set the file, e.g.
+        #     self.file = '....'
         #
-        #    if not request.user.wants_download:
-        #        self.is_download = False
-        #
-        pass
-
-    def get_filename(self, request, *args, **kwargs):
-        #
-        # Add your own logic here to set the filename, e.g.
-        #     self.filename = '....'
+        # The logic may decide that this user does not have
+        # permission to see this file, therefore:
+        #     self.has_permission = False
         #
         pass
 
-    def has_permission(self, request, *args, **kwargs):
-        #
-        # Add your own logic here to set the permissions on this file, e.g.
-        #
-        #    if not request.user.can_download:
-        #       return False
-        #
-        return True
-
-    def send_file(self, request, *args, **kwargs):
-        # 401 for non-authenticated users who should be authenticated
-        if self.authenticated_user_only and not request.user.is_authenticated:
-            return self.error401(request, *args, **kwargs)
-
-        # 403 for authenticated users who do not have permission
-        if not self.has_permission(request, *args, **kwargs):
-            return self.error403(request, *args, **kwargs)
-
-        # init response
-        self.get_filename(request, *args, **kwargs)
-        self.get_content_type(request, *args, **kwargs)
-        self.get_is_download(request, *args, **kwargs)
+    def serve(self, request, *args, **kwargs):
+        # set the content_type (e.g. file mime type)
+        if self.content_type is None:
+            self.get_content_type(request, *args, **kwargs)
 
         # load file
-        fp = open(self.filename, 'rb')
+        fp = open(self.file, 'rb')
         response = HttpResponse(fp.read(), content_type=self.content_type)
         response['Content-Length'] = len(response.content)
         fp.close()
@@ -150,7 +144,7 @@ class FileServeView(View):
         if self.is_download:
             if self.download_filename is None:
                 self.download_filename = \
-                    self.filename.replace('\\', '/').split('/')[-1:][0]
+                    self.file.replace('\\', '/').split('/')[-1:][0]
             response['Content-Disposition'] = 'attachment; filename="%s"' % \
                 self.download_filename
 
