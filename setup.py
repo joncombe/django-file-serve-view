@@ -4,7 +4,7 @@ from setuptools import find_packages
 
 setup(
     name='django-file-serve-view',
-    version='0.0.2',
+    version='0.0.3',
     author=u'Jon Combe',
     author_email='pypi@joncombe.net',
     packages=find_packages(),

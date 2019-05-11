@@ -27,10 +27,6 @@ class FileServeView(View):
         # get file
         self.get_file(request, *args, **kwargs)
 
-        # 404 for no file
-        if self.file is None:
-            return self.error404(request, *args, **kwargs)
-
         # 403 for authenticated users who do not have permission
         if not self.has_permission:
             return self.error403(request, *args, **kwargs)
@@ -130,6 +126,10 @@ class FileServeView(View):
         pass
 
     def serve(self, request, *args, **kwargs):
+        # 404 for no file
+        if self.file is None:
+            return self.error404(request, *args, **kwargs)
+
         # set the content_type (e.g. file mime type)
         if self.content_type is None:
             self.get_content_type(request, *args, **kwargs)
