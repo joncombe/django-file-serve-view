@@ -58,6 +58,7 @@ Example #3: To serve files based on a URL, you can extend the class as with some
                 if not request.user.can_download:
                     self.has_permission = False
 ```
+*It is likely the `get_file()` method is the only one you'd ever need to override with custom code.*
 
 Then add something like this to your `urls.py`:
 ```
@@ -70,7 +71,7 @@ Then add something like this to your `urls.py`:
 Available parameters:
  - authenticated_user_only<br>Default: True<br>Does the visitor need to be authenticated (logged in) to see this file.
 
- - content_type<br>Default: None<br>The MIME type of the file. If not provided, it is calculated based on this list: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types
+ - content_type<br>Default: None<br>The MIME type of the file. If not provided, it is calculated based on this list: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types. Alternatively, override the `get_content_type()` method.
 
  - download_filename<br>Default: None<br>An optional 'friendly' filename for the file sent to the user. For example, on your disk, the file may be "9e41fe35-cbb1-49b0-9e70-4ada17df7252", but the user's copy should be called "get-rich-quick.pdf"
 
@@ -82,4 +83,4 @@ Available parameters:
 
 ---
 
-Extras: To override the error messages, override the error401(), error403() and error404() methods. See the [source code](https://github.com/joncombe/django-file-serve-view/blob/master/fileserveview/views.py) for details.
+To change the error messages, override the error401(), error403() and error404() methods. See the [source code](https://github.com/joncombe/django-file-serve-view/blob/master/fileserveview/views.py) for details.
